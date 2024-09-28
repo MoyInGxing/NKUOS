@@ -166,7 +166,8 @@ qemu: $(UCOREIMG) $(SWAPIMG) $(SFSIMG)
 		-machine virt \
 		-nographic \
 		-bios default \
-		-kernel $(UCOREIMG)
+		-kernel $(UCOREIMG)\
+		-gdb tcp::12345
 #       -device loader,file=$(UCOREIMG),addr=0x80200000
 # -machine virt sifive_u
 debug: $(UCOREIMG) $(SWAPIMG) $(SFSIMG)

@@ -12,7 +12,13 @@
 
 #define TICK_NUM 100
 volatile size_t num=0;
-void  (*recover) () = (void (*)())(0x8020000a+62);
+
+//extern void L1();
+//extern void Lb();
+//void (*recover)() = (void (*)())(&L1);
+//void (*recoverb)() = (void (*)())(&Lb);
+void (*recover)() = (void (*)())(0x0);
+void (*recoverb)() = (void (*)())(0x0);
 static void print_ticks() {
     cprintf("%d ticks\n", TICK_NUM);
 #ifdef DEBUG_GRADE
@@ -120,7 +126,6 @@ void interrupt_handler(struct trapframe *tf) {
             print_ticks();
            }
             if(ticks == 1000){
-                cprintf("%d ticks\n", ticks/10);
                 sbi_shutdown();
             }
             break;
@@ -169,9 +174,9 @@ void exception_handler(struct trapframe *tf) {
              *(3)更新 tf->epc寄存器
             */
             cprintf("Illegal instruction\n");
-            cprintf("%p \n", tf->epc);
-            tf->epc = (uintptr_t)recover;
-            cprintf("%p \n", tf->epc); 
+            cprintf("start:%p \n", tf->epc);
+            tf->epc = (uintptr_t)recoverb;
+            cprintf("end:%p \n", tf->epc); 
             //sbi_shutdown();
             break;
         case CAUSE_BREAKPOINT:
@@ -182,10 +187,9 @@ void exception_handler(struct trapframe *tf) {
              *(3)更新 tf->epc寄存器
             */
             cprintf("Breakpoint instruction\n");
-            cprintf("%p \n", tf->epc);
+            cprintf("start:%p \n", tf->epc);
             tf->epc = (uintptr_t)recover;
-            cprintf("%p \n", tf->epc); 
-            cprintf("%p \n", tf->epc); 
+            cprintf("end:%p \n", tf->epc); 
             //sbi_shutdown();
             break;
         case CAUSE_MISALIGNED_LOAD:

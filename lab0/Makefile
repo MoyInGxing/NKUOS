@@ -163,8 +163,6 @@ qemu: $(UCOREIMG) $(SWAPIMG) $(SFSIMG)
 		-machine virt \
 		-nographic \
 		-bios default \
-		-S 	\
-		-gdb tcp::12344 \
 		-kernel $(UCOREIMG)
 ##		-device loader,file=$(UCOREIMG),addr=0x80200000
 
