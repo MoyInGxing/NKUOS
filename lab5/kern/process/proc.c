@@ -87,7 +87,7 @@ static struct proc_struct *
 alloc_proc(void) {
     struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
     if (proc != NULL) {
-    //LAB4:EXERCISE1 YOUR CODE
+    //LAB4:2211462
     /*
      * below fields in proc_struct need to be initialized
      *       enum proc_state state;                      // Process state
@@ -103,13 +103,19 @@ alloc_proc(void) {
      *       uint32_t flags;                             // Process flag
      *       char name[PROC_NAME_LEN + 1];               // Process name
      */
+        proc->state = PROC_UNINIT;                           // 设置进程状态为未初始化
+        proc->pid = -1;                                      // 设置进程ID为-1（还未分配）
+        proc->cr3 = boot_cr3;                                // 设置CR3寄存器的值（页目录基址）
+        proc->runs = 0;                                      // 设置进程运行次数为0
+        proc->kstack = 0;                                    // 设置内核栈地址为0（还未分配）
+        proc->need_resched = 0;                              // 设置不需要重新调度
+        proc->parent = NULL;                                 // 设置父进程为空
+        proc->mm = NULL;                                     // 设置内存管理字段为空
+        memset(&(proc->context), 0, sizeof(struct context)); // 初始化上下文信息为0
+        proc->tf = NULL;                                     // 设置trapframe为空
+        proc->flags = 0;                                     // 设置进程标志为0
+        memset(proc->name, 0, PROC_NAME_LEN);                // 初始化进程名为0
 
-     //LAB5 YOUR CODE : (update LAB4 steps)
-     /*
-     * below fields(add in LAB5) in proc_struct need to be initialized  
-     *       uint32_t wait_state;                        // waiting state
-     *       struct proc_struct *cptr, *yptr, *optr;     // relations between processes
-     */
     }
     return proc;
 }
@@ -197,7 +203,7 @@ get_pid(void) {
 void
 proc_run(struct proc_struct *proc) {
     if (proc != current) {
-        // LAB4:EXERCISE3 YOUR CODE
+        // LAB4:EXERCISE3 2211462
         /*
         * Some Useful MACROs, Functions and DEFINEs, you can use them in below implementation.
         * MACROs or Functions:
@@ -206,6 +212,15 @@ proc_run(struct proc_struct *proc) {
         *   lcr3():                   Modify the value of CR3 register
         *   switch_to():              Context switching between two processes
         */
+       struct proc_struct *prev = current, *next = proc;
+       bool success = 0;
+       local_intr_save(success);
+         {
+              current = proc;
+              lcr3(proc->cr3);
+              switch_to(&(prev->context), &(next->context));
+         }
+        local_intr_restore(success);
 
     }
 }
@@ -369,7 +384,7 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
         goto fork_out;
     }
     ret = -E_NO_MEM;
-    //LAB4:EXERCISE2 YOUR CODE
+    //LAB4:EXERCISE2 2211462
     /*
      * Some Useful MACROs, Functions and DEFINEs, you can use them in below implementation.
      * MACROs or Functions:
@@ -403,7 +418,20 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     *    update step 1: set child proc's parent to current process, make sure current process's wait_state is 0
     *    update step 5: insert proc_struct into hash_list && proc_list, set the relation links of process
     */
- 
+    if ((proc = alloc_proc()) == NULL)
+        goto fork_out;
+    proc->parent = current;
+    assert(current->wait_state == 0); // 确保当前进程的等待状态为0
+    if (setup_kstack(proc))
+        goto bad_fork_cleanup_kstack;
+    if (copy_mm(clone_flags, proc))
+        goto bad_fork_cleanup_proc;
+    copy_thread(proc, stack, tf);
+    proc->pid = get_pid();
+    hash_proc(proc);
+    list_add(&proc_list, &(proc->list_link));
+    wakeup_proc(proc);
+    ret = proc->pid;
 fork_out:
     return ret;
 
@@ -595,7 +623,7 @@ load_icode(unsigned char *binary, size_t size) {
     // Keep sstatus
     uintptr_t sstatus = tf->status;
     memset(tf, 0, sizeof(struct trapframe));
-    /* LAB5:EXERCISE1 YOUR CODE
+    /* LAB5:EXERCISE1 2211462
      * should set tf->gpr.sp, tf->epc, tf->status
      * NOTICE: If we set trapframe correctly, then the user level process can return to USER MODE from kernel. So
      *          tf->gpr.sp should be user stack top (the value of sp)
@@ -603,6 +631,9 @@ load_icode(unsigned char *binary, size_t size) {
      *          tf->status should be appropriate for user program (the value of sstatus)
      *          hint: check meaning of SPP, SPIE in SSTATUS, use them by SSTATUS_SPP, SSTATUS_SPIE(defined in risv.h)
      */
+    tf->gpr.sp = USTACKTOP;          // 设置用户栈
+    tf->epc = elf->e_entry;          // 设置异常返回入口，也就是程序的起始位置
+    tf->status = (sstatus & ~SSTATUS_SPP) | SSTATUS_SPIE;  // 清除SPP位表示用户态,设置SPIE位使能中断
 
 
     ret = 0;
