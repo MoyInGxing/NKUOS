@@ -115,6 +115,10 @@ alloc_proc(void) {
         proc->tf = NULL;                                     // 设置trapframe为空
         proc->flags = 0;                                     // 设置进程标志为0
         memset(proc->name, 0, PROC_NAME_LEN);                // 初始化进程名为0
+        proc->wait_state = 0;
+        proc->cptr = NULL; // Child Pointer 表示当前进程的子进程
+        proc->optr = NULL; // Older Sibling Pointer 表示当前进程的上一个兄弟进程
+        proc->yptr = NULL; // Younger Sibling Pointer 表示当前进程的下一个兄弟进程
 
     }
     return proc;
@@ -427,9 +431,15 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     if (copy_mm(clone_flags, proc))
         goto bad_fork_cleanup_proc;
     copy_thread(proc, stack, tf);
-    proc->pid = get_pid();
-    hash_proc(proc);
-    list_add(&proc_list, &(proc->list_link));
+    bool intr_flag;
+    local_intr_save(intr_flag);//关闭中断
+    {
+        proc->pid = get_pid();
+        hash_proc(proc);
+        //list_add(&proc_list, &(proc->list_link));
+        set_links(proc);
+    }
+    local_intr_restore(intr_flag);//开启中断
     wakeup_proc(proc);
     ret = proc->pid;
 fork_out:
@@ -821,7 +831,10 @@ user_main(void *arg) {
 #ifdef TEST
     KERNEL_EXECVE2(TEST, TESTSTART, TESTSIZE);
 #else
-    KERNEL_EXECVE(exit);
+    //KERNEL_EXECVE2(TEST, TESTSTART, TESTSIZE);
+    //KERNEL_EXECVE(exit);
+    KERNEL_EXECVE(cow);
+    //cprintf("user_main execve ok.\n");
 #endif
     panic("user_main execve failed.\n");
 }
