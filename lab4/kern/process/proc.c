@@ -135,6 +135,10 @@ get_proc_name(struct proc_struct *proc) {
 }
 
 // get_pid - alloc a unique pid for process
+/*
+next_safe 用于存储当前可以分配的最小未使用的 PID。
+last_pid 记录上一个生成的 PID。最初它被设置为 MAX_PID。
+*/
 static int
 get_pid(void) {
     static_assert(MAX_PID > MAX_PROCESS);
@@ -186,7 +190,6 @@ proc_run(struct proc_struct *proc) {
        struct proc_struct *prev = current, *next = proc;
        bool success = 0;
        local_intr_save(success);
-       assert(success==1);
          {
               current = proc;
               lcr3(proc->cr3);

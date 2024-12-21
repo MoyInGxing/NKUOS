@@ -7,7 +7,7 @@ V       := @
 
 # try to infer the correct GCCPREFX
 ifndef GCCPREFIX
-GCCPREFIX := riscv64-unknown-linux-gnu-
+GCCPREFIX := riscv64-unknown-elf-
 endif
 
 # try to infer the correct QEMU

@@ -41,10 +41,10 @@ Boot HART MEDELEG         : 0x000000000000b109
 
 Special kernel symbols:
   entry  0xc0200032 (virtual)
-  etext  0xc02068aa (virtual)
-  edata  0xc02959e0 (virtual)
-  end    0xc02a0f40 (virtual)
-Kernel executable memory footprint: 644KB
+  etext  0xc020675c (virtual)
+  edata  0xc02b5b98 (virtual)
+  end    0xc02c10f4 (virtual)
+Kernel executable memory footprint: 773KB
 memory management: default_pmm_manager
 physcial memory map:
   memory: 0x07e00000, [0x80200000, 0x87ffffff].
@@ -60,7 +60,7 @@ page fault at 0x00000100: K/W
 check_pgfault() succeeded!
 check_vmm() succeeded.
 SWAP: manager = fifo swap manager
-BEGIN check_swap: count 1, total 31579
+BEGIN check_swap: count 1, total 31546
 setup Page Table for vaddr 0X1000, so alloc a page
 setup Page Table vaddr 0~4MB OVER!
 set up init env for check_swap begin!
@@ -117,6 +117,7 @@ check_swap() succeeded!
 kernel_execve: pid = 2, name = "spin".
 Breakpoint
 I am the parent. Forking the child...
+Store/AMO page fault
 I am the parent. Running the child...
 I am the child. spinning ...
 I am the parent.  Killing the child...

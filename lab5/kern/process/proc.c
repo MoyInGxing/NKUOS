@@ -833,7 +833,7 @@ user_main(void *arg) {
 #else
     //KERNEL_EXECVE2(TEST, TESTSTART, TESTSIZE);
     //KERNEL_EXECVE(exit);
-    KERNEL_EXECVE(cow);
+    KERNEL_EXECVE(divzero);
     //cprintf("user_main execve ok.\n");
 #endif
     panic("user_main execve failed.\n");
